@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSA.ai Instructor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CSS Variables for Theming --- */
+        :root {
+            --sidebar-width: 260px;
+            --header-height: 70px;
+            --bg-color-dark: #121212;
+            --surface-color-dark: #1E1E1E;
+            --primary-color: #03DAC6;
+            --on-surface-color-dark: #E0E0E0;
+            --on-surface-secondary-dark: #8A8A8A;
+            --border-color-dark: #2A2A2A;
+            --shadow-color-dark: rgba(0, 0, 0, 0.5);
+
+            --bg-color-light: #F5F7FA;
+            --surface-color-light: #FFFFFF;
+            --on-surface-color-light: #1A202C;
+            --on-surface-secondary-light: #718096;
+            --border-color-light: #E2E8F0;
+            --shadow-color-light: rgba(0, 0, 0, 0.1);
+
+            --bg-color: var(--bg-color-dark);
+            --surface-color: var(--surface-color-dark);
+            --on-surface-color: var(--on-surface-color-dark);
+            --on-surface-secondary-color: var(--on-surface-secondary-dark);
+            --border-color: var(--border-color-dark);
+            --shadow-color: var(--shadow-color-dark);
+        }
+
+        body.light-theme {
+            --bg-color: var(--bg-color-light);
+            --surface-color: var(--surface-color-light);
+            --on-surface-color: var(--on-surface-color-light);
+            --on-surface-secondary-color: var(--on-surface-secondary-light);
+            --border-color: var(--border-color-light);
+            --shadow-color: var(--shadow-color-light);
+        }
+
+        /* --- General Setup --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--on-surface-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 25px 15px;
+            transition: transform 0.3s ease-in-out, background-color 0.3s, border-color 0.3s;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 10px 25px 10px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .logo-svg {
+            width: 40px;
+            height: 40px;
+        }
+        .logo-svg path { fill: var(--primary-color); }
+
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--on-surface-color);
+        }
+
+        .nav-links {
+            list-style: none;
+            flex-grow: 1;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--on-surface-secondary-color);
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .nav-links a:hover {
+            background-color: rgba(3, 218, 198, 0.1);
+            color: var(--primary-color);
+        }
+        .nav-links a.active {
+            background-color: var(--primary-color);
+            color: #000;
+            font-weight: 600;
+        }
+        .nav-links a.active svg { stroke: #000; }
+        .nav-links svg {
+            width: 22px;
+            height: 22px;
+            stroke: var(--on-surface-secondary-color);
+            transition: stroke 0.2s;
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex-grow: 1;
+            margin-left: var(--sidebar-width);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-header {
+            height: var(--header-height);
+            display: none; /* Hidden by default, shown on mobile */
+            align-items: center;
+            padding: 0 20px;
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .menu-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .menu-toggle svg { stroke: var(--on-surface-color); }
+
+        .page-content {
+            flex-grow: 1;
+            padding: 40px;
+        }
+
+        /* --- Page visibility control --- */
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        h2.page-title {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: var(--on-surface-color);
+        }
+        p.page-subtitle {
+            font-size: 1.1rem;
+            color: var(--on-surface-secondary-color);
+            margin-bottom: 30px;
+        }
+        
+        /* --- Dashboard Specific Styles --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        .card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+        }
+        .card h3 { font-size: 1.2rem; margin-bottom: 15px; }
+        .card p { color: var(--on-surface-secondary-color); }
+        /* --- ADDED --- */
+        .card.ai-tip-card {
+            border-left: 4px solid var(--primary-color);
+        }
+        .card.ai-tip-card p {
+            font-style: italic;
+        }
+        #ai-tip-content {
+            min-height: 40px;
+        }
+
+        /* --- Playground (Chat) Specific Styles --- */
+        .playground-layout {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - var(--header-height) - 80px); /* Full height minus padding */
+        }
+        .chat-log {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .chat-message {
+            display: flex;
+            margin-bottom: 15px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .chat-message .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        /* --- ADDED --- */
+        .chat-message .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .chat-message .avatar svg { width: 24px; height: 24px; }
+        .message-content {
+            background-color: var(--surface-color);
+            padding: 15px;
+            border-radius: 12px;
+        }
+        .message-content pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .chat-message.user { margin-left: auto; flex-direction: row-reverse; }
+        .chat-message.user .avatar { margin-left: 15px; margin-right: 0; }
+        .chat-message.user .message-content { background-color: var(--primary-color); color: #000; }
+        .chat-message.user .avatar svg { stroke: var(--on-surface-color); }
+        .chat-message.ai .avatar svg { stroke: var(--primary-color); }
+
+        .input-area { display: flex; gap: 10px; }
+        #question-input {
+            flex-grow: 1;
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            color: var(--on-surface-color);
+        }
+        #question-input:focus { outline: 2px solid var(--primary-color); }
+        #ask-button {
+            padding: 0 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #000;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        #ask-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* --- Tutorial Specific Styles --- */
+        .tutorial {
+            background: var(--surface-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .tutorial-header {
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tutorial-content {
+            padding: 0 20px 20px 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            line-height: 1.7;
+            color: var(--on-surface-secondary-color);
+        }
+
+        /* --- History Specific Styles --- */
+        .history-controls {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        #clear-history-btn {
+            background-color: #e53e3e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        #clear-history-btn:hover { background-color: #c53030; }
+        
+        #history-list .history-item {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        #history-list .history-item:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(3, 218, 198, 0.05);
+        }
+
+        /* --- Settings Specific Styles --- */
+        .settings-grid { /* --- ADDED --- */
+            display: grid;
+            gap: 25px;
+            grid-template-columns: 1fr;
+        }
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            flex-wrap: wrap; /* --- ADDED --- */
+            gap: 15px; /* --- ADDED --- */
+        }
+        /* --- ADDED --- */
+        .profile-settings-item {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .profile-pic-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        #profile-pic-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+        }
+        #profile-pic-upload-label {
+            background-color: var(--primary-color);
+            color: #000;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        #profile-pic-upload {
+            display: none;
+        }
+        .profile-name-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #user-name-input {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-size: 1rem;
+            color: var(--on-surface-color);
+        }
+        #save-name-btn {
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            align-self: flex-start;
+        }
+
+
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 10px; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 48px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 24px; }
+        .slider:before { background-color: #fff; bottom: 3px; content: ""; height: 18px; left: 4px; position: absolute; transition: .4s; width: 18px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* --- Footer --- */
+        .app-footer {
+            margin-left: var(--sidebar-width);
+            padding: 20px 40px;
+            background-color: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .footer-links a { color: var(--on-surface-secondary-color); text-decoration: none; margin-left: 20px; }
+        .footer-links a:hover { color: var(--primary-color); }
+        .social-icons a { margin-left: 15px; }
+        .social-icons svg { width: 24px; height: 24px; fill: var(--on-surface-secondary-color); }
+        .social-icons a:hover svg { fill: var(--primary-color); }
+        
+        /* --- Responsive Design --- */
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); box-shadow: 10px 0 30px var(--shadow-color); }
+            .main-content, .app-footer { margin-left: 0; }
+            .main-header { display: flex; }
+            .playground-layout { height: calc(100vh - var(--header-height) * 2 - 80px); }
+        }
+        @media (max-width: 576px) {
+            .page-content { padding: 20px; }
+            .app-footer { flex-direction: column; gap: 20px; }
+            .chat-message { max-width: 95%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- =========== SIDEBAR =========== -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50,10 A40,40 0 0,1 90,50 A40,40 0 0,1 50,90 A40,40 0 0,1 10,50 A40,40 0 0,1 50,10 M50,15 A35,35 0 1,0 85,50 A35,35 0 0,0 50,15 Z M40,30 L60,30 L60,40 L70,40 L70,60 L60,60 L60,70 L40,70 L40,60 L30,60 L30,40 L40,40 Z"/></svg>
+                <h1>DSA.ai</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" class="nav-link active" data-page="dashboard"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Dashboard</span></a></li>
+                <li><a href="#" class="nav-link" data-page="playground"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>Playground</span></a></li>
+                <li><a href="#" class="nav-link" data-page="tutorials"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Tutorials</span></a></li>
+                <li><a href="#" class="nav-link" data-page="history"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg><span>History</span></a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <a href="#" class="nav-link" data-page="settings"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+            </div>
+        </nav>
+
+        <!-- =========== MAIN CONTENT =========== -->
+        <div class="main-content">
+            <header class="main-header">
+                <button class="menu-toggle"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+            </header>
+
+            <main class="page-content">
+                <!-- Dashboard Page -->
+                <div id="dashboard" class="page active">
+                    <h2 class="page-title">Dashboard</h2>
+                    <!-- MODIFIED -->
+                    <p class="page-subtitle" id="welcome-subtitle">Welcome back! Here's a quick overview of your learning journey.</p>
+                    <div class="dashboard-grid">
+                        <!-- ADDED AI Tip Card -->
+                        <div class="card ai-tip-card" id="ai-tip-card">
+                            <h3>Today's AI Tip</h3>
+                            <p id="ai-tip-content">Loading a helpful tip for you...</p>
+                        </div>
+                        <div class="card"><h3>Start a New Session</h3><p>Jump right into the Playground and start asking questions.</p></div>
+                        <div class="card"><h3>Review Tutorials</h3><p>Brush up on key concepts like Big O, Sorting, and Data Structures.</p></div>
+                        <div class="card"><h3>Check Your History</h3><p>Look back at your previous conversations with the instructor.</p></div>
+                    </div>
+                </div>
+
+                <!-- Playground Page -->
+                <div id="playground" class="page">
+                    <h2 class="page-title">Playground</h2>
+                    <p class="page-subtitle">Ask the AI Instructor anything about Data Structures & Algorithms.</p>
+                    <div class="playground-layout">
+                        <div class="chat-log" id="chat-log"><!-- Chat messages will be appended here --></div>
+                        <div class="input-area">
+                            <input type="text" id="question-input" placeholder="Explain how a binary search tree works...">
+                            <button id="ask-button">Ask</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tutorials Page -->
+                <div id="tutorials" class="page">
+                    <h2 class="page-title">Tutorials</h2>
+                    <p class="page-subtitle">Expand your knowledge with these quick-read tutorials.</p>
+                    <div class="tutorial"><div class="tutorial-header"><span>Big O Notation</span><span>+</span></div><div class="tutorial-content"><p>Big O notation is a mathematical notation that describes the limiting behavior of a function when the argument tends towards a particular value or infinity. In computer science, it is used to classify algorithms according to how their run time or space requirements grow as the input size grows.</p></div></div>
+                    <div class="tutorial"><div class="tutorial-header"><span>Sorting Algorithms</span><span>+</span></div><div class="tutorial-content"><p>Sorting algorithms are a set of instructions that take an array or list as an input and arrange the items in a particular order. Common examples include Bubble Sort, Merge Sort, Quick Sort, and Insertion Sort. Each has its own trade-offs in terms of time and space complexity.</p></div></div>
+                    <div class="tutorial"><div class="tutorial-header"><span>Hash Tables</span><span>+</span></div><div class="tutorial-content"><p>A hash table is a data structure that implements an associative array abstract data type, a structure that can map keys to values. A hash table uses a hash function to compute an index, also called a hash code, into an array of buckets or slots, from which the desired value can be found.</p></div></div>
+                </div>
+
+                <!-- History Page -->
+                <div id="history" class="page">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 class="page-title">History</h2>
+                            <p class="page-subtitle">A record of your past conversations. Click one to review it.</p>
+                        </div>
+                        <div class="history-controls">
+                            <button id="clear-history-btn">Clear History</button>
+                        </div>
+                    </div>
+                    <div id="history-list"><!-- History items will be populated here --></div>
+                </div>
+
+                <!-- Settings Page -->
+                <!-- MODIFIED Structure for new settings -->
+                <div id="settings" class="page">
+                    <h2 class="page-title">Settings</h2>
+                    <p class="page-subtitle">Customize your experience.</p>
+                    <div class="settings-grid">
+                        <div class="setting-item profile-settings-item">
+                            <h3>Profile</h3>
+                            <div class="profile-name-container">
+                                <label for="user-name-input">Display Name</label>
+                                <input type="text" id="user-name-input" placeholder="Enter your name">
+                                <button id="save-name-btn">Save Name</button>
+                            </div>
+                            <div class="profile-pic-container">
+                                 <img src="" alt="User Avatar" id="profile-pic-preview">
+                                 <div>
+                                     <label for="profile-pic-upload" id="profile-pic-upload-label">Change Avatar</label>
+                                     <input type="file" id="profile-pic-upload" accept="image/*">
+                                 </div>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <span>Appearance</span>
+                            <div class="theme-switch-wrapper">
+                                <span>Light</span>
+                                <label class="theme-switch">
+                                    <input type="checkbox" id="theme-toggle">
+                                    <span class="slider"></span>
+                                </label>
+                                <span>Dark</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <footer class="app-footer">
+        <p>© 2024 DSA.ai. All Rights Reserved.</p>
+        <div class="footer-links"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+        <div class="social-icons">
+            <a href="#" aria-label="Github"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.69 3.86 9.37 3.95 10.01 4.13C11.54 3.1 12.21 3.31 12.21 3.31C12.65 4.41 12.37 5.23 12.29 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C13.71 14.53 16 11.53 16 8C16 3.58 12.42 0 8 0Z"/></svg></a>
+            <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.87-.4.67-.63 1.45-.63 2.28 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.39.106-.803.163-1.227.163-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/></svg></a>
+        </div>
+    </footer>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- DOM Elements ---
+        const navLinks = document.querySelectorAll('.nav-link');
+        const pages = document.querySelectorAll('.page');
+        const menuToggle = document.querySelector('.menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        const askButton = document.getElementById('ask-button');
+        const questionInput = document.getElementById('question-input');
+        const chatLog = document.getElementById('chat-log');
+        const tutorials = document.querySelectorAll('.tutorial-header');
+        const themeToggle = document.getElementById('theme-toggle');
+        const historyList = document.getElementById('history-list');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+
+        // --- ADDED: New Settings and Dashboard Elements ---
+        const welcomeSubtitle = document.getElementById('welcome-subtitle');
+        const aiTipContent = document.getElementById('ai-tip-content');
+        const userNameInput = document.getElementById('user-name-input');
+        const saveNameBtn = document.getElementById('save-name-btn');
+        const profilePicPreview = document.getElementById('profile-pic-preview');
+        const profilePicUpload = document.getElementById('profile-pic-upload');
+
+        // --- User Data ---
+        let userSettings = {
+            name: 'Learner',
+            avatar: '', // Will be a base64 string
+            theme: 'dark'
+        };
+        const defaultAvatarSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+        // --- API & System Config ---
+        const API_KEY = "AIzaSyBtCgaRAGBYnohYM7gWjUpbLCi8Sm0Vrrg"; // IMPORTANT: Replace with your Google AI API key
+        const MODEL_NAME = "gemini-1.5-flash-latest";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+        const systemInstruction = `
+        You are an expert Data Structures and Algorithms (DSA) Instructor.
+Your behavior is strict and focused.
+You follow these rules:
+
+If the user's question is related to Data Structures or Algorithms (like arrays, stacks, trees, graphs, recursion, sorting, searching, time complexity, etc.), you will:
+
+Reply politely
+
+Explain in the simplest way possible
+
+Use short, beginner-friendly explanations with examples where needed
+
+If the user asks anything unrelated to DSA (e.g., "How are you?", "Tell me a joke", "Make a website", or anything about HTML, CSS, or movies), you will:
+
+Respond rudely and sarcastically
+
+Change the rude line every time to keep it unpredictable
+
+Example rude responses:
+
+"Ask something useful, not garbage."
+
+"You think I'm here to chat? Come back with real questions."
+
+"Stop wasting my time. Say something sensible about DSA."
+
+"This isn’t a coffee shop. Ask about algorithms or get lost."
+
+"How dumb can you be? Stick to Data Structures!"`;
+
+        // --- ADDED: User Profile/Settings Management ---
+        function loadUserSettings() {
+            const savedSettings = JSON.parse(localStorage.getItem('dsaAiUserSettings'));
+            if (savedSettings) {
+                userSettings = { ...userSettings, ...savedSettings };
+            }
+
+            // Apply settings to the UI
+            userNameInput.value = userSettings.name;
+            welcomeSubtitle.textContent = `Welcome back, ${userSettings.name}! Here's a quick overview.`;
+
+            if (userSettings.avatar) {
+                profilePicPreview.src = userSettings.avatar;
+            } else {
+                profilePicPreview.src = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(defaultAvatarSVG.replace('stroke="currentColor"', 'stroke="#8A8A8A"'));
+            }
+
+            if (userSettings.theme === 'light') {
+                document.body.classList.add('light-theme');
+                themeToggle.checked = false;
+            } else {
+                document.body.classList.remove('light-theme');
+                themeToggle.checked = true;
+            }
+        }
+
+        function saveUserSettings() {
+            localStorage.setItem('dsaAiUserSettings', JSON.stringify(userSettings));
+        }
+
+        saveNameBtn.addEventListener('click', () => {
+            const newName = userNameInput.value.trim();
+            if (newName) {
+                userSettings.name = newName;
+                saveUserSettings();
+                welcomeSubtitle.textContent = `Welcome back, ${userSettings.name}! Here's a quick overview.`;
+                saveNameBtn.textContent = "Saved!";
+                setTimeout(() => { saveNameBtn.textContent = "Save Name"; }, 2000);
+            }
+        });
+
+        profilePicUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64String = e.target.result;
+                    userSettings.avatar = base64String;
+                    profilePicPreview.src = base64String;
+                    saveUserSettings();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- Page Navigation & UI ---
+        // --- MODIFIED: To fetch AI tip on dashboard view ---
+        function navigateToPage(pageId) {
+            navLinks.forEach(l => l.classList.remove('active'));
+            const activeLink = document.querySelector(`.nav-link[data-page="${pageId}"]`);
+            if (activeLink) activeLink.classList.add('active');
+            
+            pages.forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            if (pageId === 'dashboard') {
+                fetchAndDisplayAiTip();
+                welcomeSubtitle.textContent = `Welcome back, ${userSettings.name}! Here's a quick overview.`;
+            }
+            if (pageId === 'history') {
+                 renderHistoryList();
+            }
+
+            if (window.innerWidth <= 992) sidebar.classList.remove('active');
+        }
+
+        navLinks.forEach(link => link.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateToPage(link.getAttribute('data-page'));
+        }));
+
+        menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+        
+        tutorials.forEach(tutorial => tutorial.addEventListener('click', () => {
+            const content = tutorial.nextElementSibling;
+            const icon = tutorial.querySelector('span:last-child');
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                icon.textContent = '+';
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.textContent = '-';
+            }
+        }));
+
+        themeToggle.addEventListener('change', () => {
+            const isLightTheme = !themeToggle.checked;
+            document.body.classList.toggle('light-theme', isLightTheme);
+            userSettings.theme = isLightTheme ? 'light' : 'dark';
+            saveUserSettings();
+        });
+        
+        // --- History Feature Logic ---
+        function getHistory() {
+            return JSON.parse(localStorage.getItem('dsaAiHistory')) || [];
+        }
+
+        function saveHistory(history) {
+            localStorage.setItem('dsaAiHistory', JSON.stringify(history));
+        }
+
+        function addConversationToHistory(userQuery, aiResponse) {
+            const history = getHistory();
+            const newConversation = {
+                id: Date.now(),
+                title: userQuery.substring(0, 60) + (userQuery.length > 60 ? '...' : ''),
+                userQuery,
+                aiResponse
+            };
+            history.unshift(newConversation);
+            saveHistory(history);
+        }
+
+        function renderHistoryList() {
+            const history = getHistory();
+            historyList.innerHTML = '';
+            if (history.length === 0) {
+                historyList.innerHTML = '<p>No conversations saved yet.</p>';
+                return;
+            }
+            history.forEach(convo => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.textContent = convo.title;
+                item.setAttribute('data-id', convo.id);
+                item.addEventListener('click', () => loadConversation(convo.id));
+                historyList.appendChild(item);
+            });
+        }
+
+        function loadConversation(id) {
+            const history = getHistory();
+            const convo = history.find(c => c.id == id);
+            if (convo) {
+                chatLog.innerHTML = '';
+                addMessageToLog(convo.userQuery, 'user', true);
+                addMessageToLog(convo.aiResponse, 'ai', true);
+                navigateToPage('playground');
+            }
+        }
+
+        clearHistoryBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all conversation history? This cannot be undone.')) {
+                localStorage.removeItem('dsaAiHistory');
+                renderHistoryList();
+            }
+        });
+
+        // --- Playground Chat Logic ---
+        askButton.addEventListener('click', handleUserQuery);
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleUserQuery();
+        });
+
+        function handleUserQuery() {
+            const question = questionInput.value.trim();
+            if (!question || askButton.disabled) return;
+
+            chatLog.innerHTML = '';
+            addMessageToLog(question, 'user', true);
+            questionInput.value = '';
+            getAiResponse(question, systemInstruction);
+        }
+
+        // --- MODIFIED: To use custom user avatar ---
+        function addMessageToLog(message, sender, instant = false) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `chat-message ${sender}`;
+            
+            let avatarContent;
+            if (sender === 'user') {
+                if (userSettings.avatar) {
+                    avatarContent = `<img src="${userSettings.avatar}" alt="User Avatar">`;
+                } else {
+                    avatarContent = defaultAvatarSVG;
+                }
+            } else { // AI
+                avatarContent = '<svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50,10 A40,40 0 0,1 90,50 A40,40 0 0,1 50,90 A40,40 0 0,1 10,50 A40,40 0 0,1 50,10 M50,15 A35,35 0 1,0 85,50 A35,35 0 0,0 50,15 Z M40,30 L60,30 L60,40 L70,40 L70,60 L60,60 L60,70 L40,70 L40,60 L30,60 L30,40 L40,40 Z"/></svg>';
+            }
+            
+            messageWrapper.innerHTML = `<div class="avatar">${avatarContent}</div><div class="message-content"><pre></pre></div>`;
+            chatLog.appendChild(messageWrapper);
+            const preElement = messageWrapper.querySelector('pre');
+            
+            if (instant) {
+                preElement.textContent = message;
+            } else {
+                typewriterEffect(preElement, message);
+            }
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        // --- MODIFIED: To be more generic for different prompts ---
+        async function getAiResponse(prompt, systemPrompt = null) {
+            setLoadingState(true);
+            const requestBody = {
+                contents: [{ parts: [{ text: prompt }] }],
+            };
+            if(systemPrompt) {
+                 requestBody.system_instruction = { parts: [{ text: systemPrompt }] };
+            }
+
+            try {
+                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+                if (!response.ok) { const errorData = await response.json(); throw new Error(`API Error: ${response.status}. ${errorData.error.message}`); }
+                const data = await response.json();
+                const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (aiText) {
+                    // Only save to history if it's a user query, not a system-initiated one like the tip
+                    if(systemPrompt) {
+                        addConversationToHistory(prompt, aiText);
+                        renderHistoryList();
+                    }
+                    addMessageToLog(aiText, 'ai');
+                } else {
+                    addMessageToLog("I'm sorry, I couldn't generate a response. Please try again.", 'ai');
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                addMessageToLog(`Error: ${error.message}`, 'ai');
+                setLoadingState(false); // Ensure loading state is reset on error
+            }
+        }
+        
+        // --- ADDED: Function to fetch and display the AI tip ---
+        async function fetchAndDisplayAiTip() {
+            aiTipContent.textContent = "Fetching a new tip from the AI...";
+            const tipPrompt = "Provide a single, concise, and helpful tip about Data Structures and Algorithms. The tip should be easy to understand for someone learning the topic. Keep it short and to the point.";
+            
+            try {
+                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: tipPrompt }] }] }) });
+                if (!response.ok) throw new Error('Failed to fetch tip');
+                const data = await response.json();
+                const tipText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (tipText) {
+                    aiTipContent.textContent = tipText;
+                } else {
+                    throw new Error('Empty response from AI');
+                }
+            } catch (error) {
+                console.error("Tip Fetch Error:", error);
+                aiTipContent.textContent = "Could not load a tip. Focus on practicing with Big O notation today!";
+            }
+        }
+
+        function setLoadingState(isLoading) {
+            askButton.disabled = isLoading;
+            questionInput.disabled = isLoading;
+        }
+
+        function typewriterEffect(element, text, speed = 15) {
+            let i = 0;
+            element.textContent = '';
+            function type() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i); i++;
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    setTimeout(type, speed);
+                } else {
+                    setLoadingState(false);
+                }
+            }
+            type();
+        }
+
+        // --- Initial Load ---
+        loadUserSettings();
+        navigateToPage('dashboard'); // Start on dashboard and trigger initial loads
+    });
+    </script>
+</body>
+</html>
